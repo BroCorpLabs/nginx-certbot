@@ -3,3 +3,4 @@ data/certbot
 data/nginx
 /data/nginx
 init-letsencrypt.sh
+corp-config.json
