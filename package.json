@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "@brocorplabs/config": "^0.1.1",
+    "dockerode": "^3.3.0",
+    "express": "^4.17.1",
+    "node-fetch": "^2.6.1"
+  }
+}

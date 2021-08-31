@@ -2,5 +2,7 @@
 data/certbot
 data/nginx
 /data/nginx
+node_modules
+/node_modules
 init-letsencrypt.sh
 corp-config.json
