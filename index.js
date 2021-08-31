@@ -16,6 +16,52 @@ const runOne = (line) => {
     execSync(line, { stdio: 'inherit' });
 };
 
+nginxConfigGenerator = (domain, ingressPoint, ingressPort) => {
+    let confLines = [];
+    confLines.push('server {');
+    confLines.push('    listen 80;');
+    confLines.push(`    server_name ${domain};`);
+    confLines.push('    server_tokens off;');
+    confLines.push('');
+    confLines.push('    location /.well-known/acme-challenge/ {');
+    confLines.push('        root /var/www/certbot;');
+    confLines.push('    }');
+    confLines.push('');
+    confLines.push('    location / {');
+    confLines.push('        return 301 https://$host$request_uri;');
+    confLines.push('    }');
+    confLines.push('}');
+    confLines.push('');
+    confLines.push('server {');
+    confLines.push('    listen 443 ssl;');
+    confLines.push(`    server_name ${domain};`);
+    confLines.push('    server_tokens off;');
+    confLines.push('');
+    confLines.push(
+        `    ssl_certificate /etc/letsencrypt/live/${domain}/fullchain.pem;`,
+    );
+    confLines.push(
+        `    ssl_certificate_key /etc/letsencrypt/live/${domain}/privkey.pem;`,
+    );
+    confLines.push('    include /etc/letsencrypt/options-ssl-nginx.conf;');
+    confLines.push('    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;');
+    confLines.push('');
+    confLines.push('    location / {');
+    confLines.push(`        proxy_pass  ${ingressPoint}:${ingressPort};`);
+    confLines.push(
+        '        proxy_set_header    Host                $http_host;',
+    );
+    confLines.push(
+        '        proxy_set_header    X-Real-IP           $remote_addr;',
+    );
+    confLines.push(
+        '        proxy_set_header    X-Forwarded-For     $proxy_add_x_forwarded_for;',
+    );
+    confLines.push('    }');
+    confLines.push('}');
+    return confLines.join('\n');
+};
+
 app.post('/config', (req, res) => {
     res.send('Configuring!');
     const corpConfig = JSON.parse(fs.readFileSync('./corp-config.json'));
@@ -37,8 +83,18 @@ app.post('/config', (req, res) => {
         const path = `/etc/letsencrypt/live/${eachDomain['domainName']}`;
         runOne(`mkdir -p ${dataPath}/conf/live/${eachDomain['domainName']}`);
         runOne(
-            `docker-compose run --rm --entrypoint openssl req -x509 -nodes -newkey rsa:2048 -days 1 -keyout '${path}/privkey.pem' -out '${path}/fullchain.pem' -subj '/CN=localhost'" certbot`,
+            `docker-compose run --rm --entrypoint "openssl req -x509 -nodes -newkey rsa:2048 -days 1 -keyout '${path}/privkey.pem' -out '${path}/fullchain.pem' -subj '/CN=localhost'" certbot`,
         );
+    });
+    runOne(`rm -f ./data/nginx/app.conf`);
+    corpConfig['domains'].forEach((eachDomain) => {
+        const mainConfig = '';
+        mainConfig += nginxConfigGenerator(
+            eachDomain['domainName'],
+            corpConfig['resolveLocation'],
+            eachDomain['resolveNodePortTo'],
+        );
+        fs.writeFileSync('./data/nginx/app.conf', mainConfig);
     });
     runOne(`docker-compose up --force-recreate -d nginx`);
     corpConfig['domains'].forEach((eachDomain) => {
