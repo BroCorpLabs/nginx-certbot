@@ -87,15 +87,15 @@ app.post('/config', (req, res) => {
         );
     });
     runOne(`rm -f ./data/nginx/app.conf`);
+    const mainConfig = '';
     corpConfig['domains'].forEach((eachDomain) => {
-        const mainConfig = '';
         mainConfig += nginxConfigGenerator(
             eachDomain['domainName'],
             corpConfig['resolveLocation'],
             eachDomain['resolveNodePortTo'],
         );
-        fs.writeFileSync('./data/nginx/app.conf', mainConfig);
     });
+    fs.writeFileSync('./data/nginx/app.conf', mainConfig);
     runOne(`docker-compose up --force-recreate -d nginx`);
     corpConfig['domains'].forEach((eachDomain) => {
         console.log(`Dropping dummy cert for ${eachDomain['domainName']}`);
