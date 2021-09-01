@@ -73,10 +73,10 @@ app.post('/config', (req, res) => {
     runOne(`mkdir -p ${dataPath}/conf`);
 
     runOne(
-        `curl -s https://raw.githubusercontent.com/certbot/certbot/master/certbot-nginx/certbot_nginx/_internal/tls_configs/options-ssl-nginx.conf > "${data_path}/conf/options-ssl-nginx.conf"`,
+        `curl -s https://raw.githubusercontent.com/certbot/certbot/master/certbot-nginx/certbot_nginx/_internal/tls_configs/options-ssl-nginx.conf > "${dataPath}/conf/options-ssl-nginx.conf"`,
     );
     runOne(
-        `curl -s https://raw.githubusercontent.com/certbot/certbot/master/certbot/certbot/ssl-dhparams.pem > "${data_path}/conf/ssl-dhparams.pem"`,
+        `curl -s https://raw.githubusercontent.com/certbot/certbot/master/certbot/certbot/ssl-dhparams.pem > "${dataPath}/conf/ssl-dhparams.pem"`,
     );
     corpConfig['domains'].forEach((eachDomain) => {
         console.log(`Creating dummy cert for ${eachDomain['domainName']}`);
@@ -87,7 +87,7 @@ app.post('/config', (req, res) => {
         );
     });
     runOne(`rm -f ./data/nginx/app.conf`);
-    const mainConfig = '';
+    let mainConfig = '';
     corpConfig['domains'].forEach((eachDomain) => {
         mainConfig += nginxConfigGenerator(
             eachDomain['domainName'],
